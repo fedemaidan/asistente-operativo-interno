@@ -25,6 +25,7 @@ services:
     environment:
       NODE_ENV: development
       DATABASE_URL: "postgres://sorby_development:sorby_development@host.docker.internal:5440/MGDB"
+      TZ: "America/Argentina/Buenos_Aires"
     ports:
       - "3000:3000"
     volumes:

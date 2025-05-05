@@ -3,8 +3,61 @@ const connectToWhatsApp = require("./src/services/Mensajes/whatsapp");
 const getMessageType = require("./src/services/Mensajes/GetType");
 const messageResponder = require("./src/services/Mensajes/messageResponder");
 const socketSingleton = require("./src/services/SockSingleton/sockSingleton");
+const sendMessageToContact = require("./src/Utiles/Mensajes/sendMessageToContact");
+const {
+  getContactosFromSheet,
+  updateContactoRow,
+} = require("./src/Utiles/Google/Sheets/contactos");
 
-const enviarContactosEnFrio = async () => {};
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const enviarContactosEnFrio = async () => {
+  try {
+    const contactos = await getContactosFromSheet();
+
+    // Obtener la hora actual (0-23)
+    const horaActual = new Date().getHours();
+
+    const contactosPendientes = contactos.filter((contacto) => {
+      const esPendiente = contacto.estado === "Pendiente";
+
+      let coincideHora = true;
+      if (contacto.hora) {
+        const horaContacto = parseInt(contacto.hora);
+        if (!isNaN(horaContacto)) {
+          coincideHora = horaContacto === horaActual;
+        }
+      }
+
+      return esPendiente && coincideHora;
+    });
+
+    if (contactosPendientes.length === 0) {
+      console.log("No hay contactos pendientes para enviar en esta hora.");
+      return;
+    }
+
+    console.log(
+      `Enviando mensajes a ${contactosPendientes.length} contactos programados para las ${horaActual}:00hs`
+    );
+
+    for (const contacto of contactosPendientes) {
+      await sendMessageToContact(contacto.numero, contacto.mensaje);
+      contacto.estado = "Contactado";
+      await updateContactoRow(contacto);
+
+      const waitTime = Math.floor(Math.random() * (180000 - 60000) + 60000);
+      console.log(
+        `Esperando ${waitTime / 1000} segundos antes del siguiente mensaje...`
+      );
+
+      await sleep(waitTime);
+    }
+  } catch (error) {
+    console.error("Error al obtener contactos de la hoja de cálculo:", error);
+    return;
+  }
+};
 
 const startBot = async () => {
   const sock = await connectToWhatsApp();
@@ -17,7 +70,7 @@ const startBot = async () => {
     const sender = msg.key.remoteJid;
     const messageType = getMessageType(msg.message);
 
-    await messageResponder(messageType, msg, sock, sender);
+    //await messageResponder(messageType, msg, sock, sender);
   });
 
   setInterval(() => console.log("Keep-alive"), 5 * 60 * 1000);
@@ -25,6 +78,8 @@ const startBot = async () => {
     async () => await sock.sendPresenceUpdate("available"),
     10 * 60 * 1000
   );
+
+  enviarContactosEnFrio();
   setInterval(() => {
     enviarContactosEnFrio();
   }, 1000 * 60 * 60);
