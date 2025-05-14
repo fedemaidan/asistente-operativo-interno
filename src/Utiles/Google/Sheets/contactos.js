@@ -7,7 +7,7 @@ const {
 require("dotenv").config();
 
 const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID;
-const SHEET_NAME = "Contactos en Frio";
+const SHEET_NAME = "Contactos";
 const RANGE = `${SHEET_NAME}!A1:Z10000`;
 
 const parseContactos = (arr) =>
@@ -20,7 +20,8 @@ const parseContactos = (arr) =>
     numero: row[5],
     web: row[6],
     dataExtra: row[7],
-    mensaje: row[8],
+    codigoPrompt: row[8],
+    mensaje: row[9],
   }));
 
 const getArrayToSheetGeneral = (contacto) => {
@@ -33,6 +34,7 @@ const getArrayToSheetGeneral = (contacto) => {
     contacto.numero,
     contacto.web,
     contacto.dataExtra,
+    contacto.codigoPrompt,
     contacto.mensaje,
   ];
   return values;
@@ -51,10 +53,8 @@ async function getContactosFromSheet() {
       SHEET_NAME,
       "A2:M1000"
     );
-    console.log("Data Contactos Raw", dataContactosRaw);
 
     const dataContactos = parseContactos(dataContactosRaw);
-    console.log("Data Contactos", dataContactos);
     return dataContactos;
   } catch (error) {
     console.error("Error al obtener contactos de la hoja:", error);
@@ -71,7 +71,18 @@ async function updateContactoRow(contacto) {
   }
 }
 
+async function actualizarEstado(contacto) {
+  try {
+    const values = getArrayToSheetGeneral(contacto);
+
+    await updateRow(GOOGLE_SHEET_ID, values, RANGE, 5, contacto.numero);
+  } catch (error) {
+    console.error("Error al actualizar el estado del contacto:", error);
+  }
+}
+
 module.exports = {
   getContactosFromSheet,
   updateContactoRow,
+  actualizarEstado,
 };

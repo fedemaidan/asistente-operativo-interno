@@ -140,6 +140,12 @@ async function updateRow(sheetId, values, range, posIdColumn, idValue) {
   const rowIdx = response.data.values.findIndex(
     (row) => row[posIdColumn] == idValue
   );
+
+  if (rowIdx === -1) {
+    console.log(`ID ${idValue} not found, no row updated.`);
+    return;
+  }
+
   const writeRange = `${range.split("!")[0]}!A${rowIdx + rowInit}`;
 
   const writeRequest = {

@@ -15,11 +15,17 @@ const enviarContactosEnFrio = async () => {
   try {
     const contactos = await getContactosFromSheet();
 
-    // Obtener la hora actual (0-23)
-    const horaActual = new Date().getHours();
+    const fechaActual = new Date();
+    const horaActual = fechaActual.getHours();
+
+    const diaActual = fechaActual.getDate().toString().padStart(2, "0");
+    const mesActual = (fechaActual.getMonth() + 1).toString().padStart(2, "0");
+    const anioActual = fechaActual.getFullYear();
+    const fechaFormateada = `${diaActual}/${mesActual}/${anioActual}`;
 
     const contactosPendientes = contactos.filter((contacto) => {
-      const esPendiente = contacto.estado === "Pendiente";
+      const esPendiente =
+        contacto.estado === "Pendiente" || contacto.estado === "";
 
       let coincideHora = true;
       if (contacto.hora) {
@@ -29,7 +35,12 @@ const enviarContactosEnFrio = async () => {
         }
       }
 
-      return esPendiente && coincideHora;
+      let coincideFecha = true;
+      if (contacto.fecha) {
+        coincideFecha = contacto.fecha === fechaFormateada;
+      }
+
+      return esPendiente && coincideHora && coincideFecha;
     });
 
     if (contactosPendientes.length === 0) {
@@ -37,18 +48,17 @@ const enviarContactosEnFrio = async () => {
       return;
     }
 
-    console.log(
-      `Enviando mensajes a ${contactosPendientes.length} contactos programados para las ${horaActual}:00hs`
-    );
-
     for (const contacto of contactosPendientes) {
+      console.log("CONTACTO PENDIENTE", contacto.numero, contacto.mensaje);
       await sendMessageToContact(contacto.numero, contacto.mensaje);
       contacto.estado = "Contactado";
       await updateContactoRow(contacto);
 
       const waitTime = Math.floor(Math.random() * (180000 - 60000) + 60000);
       console.log(
-        `Esperando ${waitTime / 1000} segundos antes del siguiente mensaje...`
+        `Esperando ${Math.round(
+          waitTime / 1000
+        )} segundos antes del siguiente mensaje...`
       );
 
       await sleep(waitTime);
@@ -70,7 +80,7 @@ const startBot = async () => {
     const sender = msg.key.remoteJid;
     const messageType = getMessageType(msg.message);
 
-    //await messageResponder(messageType, msg, sock, sender);
+    await messageResponder(messageType, msg, sock, sender);
   });
 
   setInterval(() => console.log("Keep-alive"), 5 * 60 * 1000);
