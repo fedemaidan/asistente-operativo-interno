@@ -51,7 +51,7 @@ async function getContactosFromSheet() {
     const dataContactosRaw = await getRowsValues(
       GOOGLE_SHEET_ID,
       SHEET_NAME,
-      "A2:M1000"
+      "A2:M10000"
     );
 
     const dataContactos = parseContactos(dataContactosRaw);
@@ -71,11 +71,27 @@ async function updateContactoRow(contacto) {
   }
 }
 
-async function actualizarEstado(contacto) {
-  try {
-    const values = getArrayToSheetGeneral(contacto);
+async function getContactoFromSheet(phoneNumber) {
+  const contactos = await getRowsValues(
+    GOOGLE_SHEET_ID,
+    SHEET_NAME,
+    "A2:M10000"
+  );
+  console.log("CONTACTOS", contactos);
+  const contacto = contactos.find((contacto) => contacto[5] === phoneNumber);
 
-    await updateRow(GOOGLE_SHEET_ID, values, RANGE, 5, contacto.numero);
+  return contacto;
+}
+
+async function actualizarEstado(estado, phoneNumber) {
+  try {
+    const values = await getContactoFromSheet(phoneNumber);
+    console.log("VALORES", values);
+    if (!values) return;
+
+    values[0] = estado;
+
+    await updateRow(GOOGLE_SHEET_ID, values, RANGE, 5, phoneNumber);
   } catch (error) {
     console.error("Error al actualizar el estado del contacto:", error);
   }
