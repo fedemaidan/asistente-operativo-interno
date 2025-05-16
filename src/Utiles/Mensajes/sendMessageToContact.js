@@ -6,6 +6,7 @@ module.exports = sendMessageToContact = async (phonenNumber, message) => {
   try {
     const userId = `${phonenNumber}@s.whatsapp.net`;
     const sock = sockSingleton.getSock();
+    console.log("sock", sock);
     sock.sendMessage(userId, {
       text: message,
     });
