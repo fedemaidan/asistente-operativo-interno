@@ -3,6 +3,7 @@ const {
   updateContactoRow,
 } = require("../Google/Sheets/contactos");
 const sendMessageToContact = require("./sendMessageToContact");
+const { DateTime } = require("luxon");
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -10,32 +11,37 @@ const enviarContactosEnFrio = async () => {
   try {
     const contactos = await getContactosFromSheet();
 
-    const fechaActual = new Date();
-    const horaActual = fechaActual.getHours();
+    const fechaActual = DateTime.now().setZone(
+      "America/Argentina/Buenos_Aires"
+    );
+    const horaActual = fechaActual.hour;
+    const fechaFormateada = fechaActual.toFormat("dd/MM/yyyy");
 
-    const diaActual = fechaActual.getDate().toString().padStart(2, "0");
-    const mesActual = (fechaActual.getMonth() + 1).toString().padStart(2, "0");
-    const anioActual = fechaActual.getFullYear();
-    const fechaFormateada = `${diaActual}/${mesActual}/${anioActual}`;
+    console.log("FECHA FORMATEADA", fechaFormateada);
+    console.log("HORA ACTUAL", horaActual);
 
     const contactosPendientes = contactos.filter((contacto) => {
       const esPendiente =
         contacto.estado === "Pendiente" || contacto.estado === "";
 
-      let coincideHora = true;
+      let coincideHora = false;
       if (contacto.hora) {
         const horaContacto = parseInt(contacto.hora);
-        if (!isNaN(horaContacto)) {
-          coincideHora = horaContacto === horaActual;
-        }
+        coincideHora = horaContacto === horaActual;
       }
 
-      let coincideFecha = true;
+      let coincideFecha = false;
       if (contacto.fecha) {
         coincideFecha = contacto.fecha === fechaFormateada;
       }
 
-      return esPendiente && coincideHora && coincideFecha;
+      return (
+        esPendiente &&
+        coincideHora &&
+        coincideFecha &&
+        contacto.numero &&
+        contacto.mensaje
+      );
     });
 
     if (contactosPendientes.length === 0) {
