@@ -12,6 +12,7 @@ const QRCode = require("qrcode");
 const express = require("express");
 const app = express();
 const enviarContactosEnFrio = require("../../Utiles/Mensajes/enviarContactosEnFrio");
+const sockSingleton = require("../SockSingleton/sockSingleton");
 
 // Variable para almacenar el último QR generado (si se requiere)
 let latestQR = null;
@@ -65,6 +66,8 @@ const connectToWhatsApp = async () => {
 
   // Guarda las credenciales cada vez que se actualizan
   sock.ev.on("creds.update", saveCreds);
+
+  await sockSingleton.setSock(sock);
 
   return sock;
 };

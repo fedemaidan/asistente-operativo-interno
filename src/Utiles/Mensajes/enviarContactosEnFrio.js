@@ -8,9 +8,10 @@ const { DateTime } = require("luxon");
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const enviarContactosEnFrio = async () => {
+  console.log("ENVIANDO CONTACTOS EN FRIO");
   try {
     const contactos = await getContactosFromSheet();
-
+    console.log("CONTACTOS", contactos);
     const fechaActual = DateTime.now().setZone(
       "America/Argentina/Buenos_Aires"
     );
