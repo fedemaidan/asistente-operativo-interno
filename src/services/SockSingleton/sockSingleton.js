@@ -17,7 +17,7 @@ class SockSingleton {
 
     baileysAutoReporter.startAutoReport(
       this.sock,
-      "asistente-operativo",
+      "asistente-interno",
       "http://localhost:4000/api/reportar"
     );
 
